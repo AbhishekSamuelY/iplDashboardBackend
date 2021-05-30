@@ -15,17 +15,25 @@ github: abhisheksamuely@github
 */
 package com.abhisheksamuely.ipl.controllers;
 
+import java.text.ParseException;
+import java.time.LocalDate;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.abhisheksamuely.ipl.models.Match;
 import com.abhisheksamuely.ipl.models.Team;
 import com.abhisheksamuely.ipl.repositories.MatchRepository;
 import com.abhisheksamuely.ipl.repositories.TeamRepository;
 
+@CrossOrigin
 @RestController
 public class TeamController {
 	
@@ -34,11 +42,29 @@ public class TeamController {
 	@Autowired
 	private MatchRepository matchRepository;
 	
-	@GetMapping("/team/{teamName}")
+	@GetMapping("/teams")
+    public Iterable<Team> getAllTeam() {
+        return teamRepository.findAll();
+    }
+
+	
+	@GetMapping("/teams/{teamName}")
 	public Team getTeam(@PathVariable String teamName) {
 		Team team = teamRepository.findByTeamName(teamName);
-		team.setLatestMatches(matchRepository.findLatestMatchesByTeam(teamName, 5));
+		team.setMatches(matchRepository.findLatestMatchesByTeam(teamName, 4));
 
 		return team;
+	}
+	
+	@GetMapping("/teams/{teamName}/matches")
+	public List<Match>getMatchesForTeam(@PathVariable String teamName, @RequestParam(value = "year") int year){
+		try {
+			long startDate = new java.text.SimpleDateFormat("MM/dd/yyyy").parse("01/01/"+year).getTime();
+			long endDate = new java.text.SimpleDateFormat("MM/dd/yyyy").parse("01/01/"+(year+1)).getTime();
+			return matchRepository.getMatchesByTeamBetweenDates(teamName, startDate, endDate);
+		} catch (ParseException e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 }
